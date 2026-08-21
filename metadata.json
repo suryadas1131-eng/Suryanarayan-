@@ -1,0 +1,6 @@
+{
+  "name": "PhysioCare",
+  "description": "Complete Physiotherapy Patient & Admin Management Suite for home visits, exercise prescriptions, 3D interactive movements, articles, and real-time backend sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
