@@ -15,21 +15,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept Licenses & Install Android 36 SDK
+      - name: Accept Licenses & Install Android SDK
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" || true
 
-      - name: Prepare Local Properties, Keystore & Secrets
+      - name: Prepare Keystore, Local Properties & Environment
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           if [ -f debug.keystore.base64 ]; then
@@ -42,7 +42,7 @@ jobs:
           echo "MAPS_API_KEY=" >> .env
           echo "GEMINI_API_KEY=" >> .env
 
-      - name: Setup Gradle 9.3.1
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '9.3.1'
@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PhysioCare-Debug-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
 
