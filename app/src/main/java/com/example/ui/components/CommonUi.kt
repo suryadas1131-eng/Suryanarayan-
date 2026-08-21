@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +21,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.R
 import com.example.ui.theme.*
+
+@Composable
+fun DoctorAvatarImage(
+    photoUrl: String?,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = "Doctor Photo"
+) {
+    val cleanUrl = photoUrl?.trim().orEmpty()
+    if (cleanUrl.isEmpty()) {
+        Image(
+            painter = painterResource(id = R.drawable.img_doctor_profile_1787258632187),
+            contentDescription = contentDescription,
+            modifier = modifier,
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        AsyncImage(
+            model = cleanUrl,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.img_doctor_profile_1787258632187),
+            error = painterResource(id = R.drawable.img_doctor_profile_1787258632187)
+        )
+    }
+}
 
 @Composable
 fun StatusBadge(status: String, modifier: Modifier = Modifier) {
@@ -102,6 +133,7 @@ fun QuickContactBar(
     whatsapp: String,
     email: String,
     context: Context,
+    doctorName: String = "Doctor",
     showCall: Boolean = true,
     showWhatsapp: Boolean = true,
     showEmail: Boolean = true,
@@ -114,7 +146,7 @@ fun QuickContactBar(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Contact Dr. Satyaprakash Directly",
+                text = "Contact $doctorName Directly",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )

@@ -3,6 +3,7 @@ package com.example.ui.patient
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -66,20 +67,15 @@ fun PatientHomeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
+                        Image(
+                            painter = painterResource(id = R.drawable.img_physio_logo_v2_1787291462283),
+                            contentDescription = "PhysioCare Logo",
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
-                                .background(PhysioTealPrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MedicalServices,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                                .border(1.dp, PhysioTealPrimary, CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
@@ -230,13 +226,12 @@ fun PatientHomeScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.img_doctor_profile_1787258632187),
+                        DoctorAvatarImage(
+                            photoUrl = doc.photoUrl,
                             contentDescription = "Doctor Profile",
                             modifier = Modifier
                                 .size(68.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
+                                .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -669,6 +664,7 @@ fun PatientHomeScreen(
                     whatsapp = doc.whatsapp,
                     email = doc.email,
                     context = context,
+                    doctorName = doc.name,
                     showCall = config.showCallButton,
                     showWhatsapp = config.showWhatsappButton,
                     showEmail = config.showEmailButton,

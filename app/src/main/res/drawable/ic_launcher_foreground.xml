@@ -3,6 +3,7 @@
     <item
         android:width="72dp"
         android:height="72dp"
-        android:drawable="@drawable/img_app_icon_1787258609019"
+        android:drawable="@drawable/img_physio_logo_v2_1787291462283"
         android:gravity="center" />
 </layer-list>
+

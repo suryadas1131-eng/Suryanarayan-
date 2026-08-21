@@ -1,11 +1,16 @@
 package com.example.ui.admin
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -887,7 +892,8 @@ private fun AdminDoctorProfileTab(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -903,13 +909,52 @@ private fun AdminDoctorProfileTab(
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Edit Info")
+                            Text("Edit Profile & Photo")
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(doctor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(doctor.qualifications, color = PhysioTealPrimary, fontWeight = FontWeight.SemiBold)
-                    Text(doctor.experience, style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(14.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(contentAlignment = Alignment.BottomEnd) {
+                            DoctorAvatarImage(
+                                photoUrl = doctor.photoUrl,
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, PhysioTealPrimary, CircleShape),
+                                contentDescription = doctor.name
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(PhysioTealPrimary)
+                                    .clickable(onClick = onEditProfile),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.PhotoCamera,
+                                    contentDescription = "Change Photo",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.width(14.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(doctor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(doctor.qualifications, color = PhysioTealPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text(doctor.experience, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Divider()
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Phone: ${doctor.phone} | WhatsApp: ${doctor.whatsapp} | Email: ${doctor.email}", style = MaterialTheme.typography.bodySmall)
                     Text("Coverage Area: ${doctor.serviceArea}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -918,31 +963,284 @@ private fun AdminDoctorProfileTab(
         }
 
         item {
-            Text("Weekly Working Hours & Availability", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Weekly Working Hours & Availability", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Set doctor consultation & home visit hours", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // Quick Shift Presets Bar
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = PhysioTealContainer.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, tint = PhysioTealPrimary, modifier = Modifier.size(18.dp))
+                        Text("Quick Working Hours Presets:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PhysioTealDark)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val updated = workingHours.map {
+                                        if (it.dayOfWeek == "Sunday") it.copy(isOpen = false)
+                                        else it.copy(isOpen = true, openTime = "09:00 AM", closeTime = "07:00 PM")
+                                    }
+                                    onUpdateWorkingHours(updated)
+                                },
+                                label = { Text("Mon-Sat (9 AM - 7 PM)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
+                                leadingIcon = { Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp), tint = PhysioTealPrimary) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val updated = workingHours.map {
+                                        it.copy(isOpen = true, openTime = "08:00 AM", closeTime = "08:00 PM")
+                                    }
+                                    onUpdateWorkingHours(updated)
+                                },
+                                label = { Text("All 7 Days (8 AM - 8 PM)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
+                                leadingIcon = { Icon(Icons.Default.AllInclusive, contentDescription = null, modifier = Modifier.size(14.dp), tint = PhysioTealPrimary) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val updated = workingHours.map {
+                                        if (it.dayOfWeek in listOf("Saturday", "Sunday")) it.copy(isOpen = false)
+                                        else it.copy(isOpen = true, openTime = "09:00 AM", closeTime = "05:00 PM")
+                                    }
+                                    onUpdateWorkingHours(updated)
+                                },
+                                label = { Text("Mon-Fri (9 AM - 5 PM)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val updated = workingHours.map {
+                                        if (it.dayOfWeek == "Sunday") it.copy(isOpen = false)
+                                        else it.copy(isOpen = true, openTime = "08:00 AM", closeTime = "01:00 PM")
+                                    }
+                                    onUpdateWorkingHours(updated)
+                                },
+                                label = { Text("Morning Shift (8 AM - 1 PM)", fontSize = 11.sp) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val updated = workingHours.map {
+                                        if (it.dayOfWeek == "Sunday") it.copy(isOpen = false)
+                                        else it.copy(isOpen = true, openTime = "04:00 PM", closeTime = "09:00 PM")
+                                    }
+                                    onUpdateWorkingHours(updated)
+                                },
+                                label = { Text("Evening Shift (4 PM - 9 PM)", fontSize = 11.sp) }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         items(workingHours) { day ->
+            var isEditingDay by remember { mutableStateOf(false) }
+            var editOpenTime by remember { mutableStateOf(day.openTime) }
+            var editCloseTime by remember { mutableStateOf(day.closeTime) }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(12.dp)
+                colors = CardDefaults.cardColors(containerColor = if (day.isOpen) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = if (day.isOpen) 2.dp else 0.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(day.dayOfWeek, fontWeight = FontWeight.Bold)
-                        Text(if (day.isOpen) "${day.openTime} - ${day.closeTime}" else "Closed", fontSize = 12.sp, color = if (day.isOpen) PhysioTealDark else MaterialTheme.colorScheme.error)
-                    }
-                    Switch(
-                        checked = day.isOpen,
-                        onCheckedChange = { isOpen ->
-                            val updated = workingHours.map { if (it.dayOfWeek == day.dayOfWeek) it.copy(isOpen = isOpen) else it }
-                            onUpdateWorkingHours(updated)
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(if (day.isOpen) PhysioAccentGreen else MaterialTheme.colorScheme.error)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                day.dayOfWeek,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall
+                            )
                         }
-                    )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (day.isOpen) "Open" else "Closed",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (day.isOpen) PhysioTealDark else MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Switch(
+                                checked = day.isOpen,
+                                onCheckedChange = { isOpen ->
+                                    val updated = workingHours.map { if (it.dayOfWeek == day.dayOfWeek) it.copy(isOpen = isOpen) else it }
+                                    onUpdateWorkingHours(updated)
+                                }
+                            )
+                        }
+                    }
+
+                    if (day.isOpen) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .background(PhysioTealContainer, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.AccessTime, contentDescription = null, tint = PhysioTealDark, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "${day.openTime} – ${day.closeTime}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PhysioTealDark
+                                )
+                            }
+
+                            TextButton(
+                                onClick = { isEditingDay = !isEditingDay }
+                            ) {
+                                Icon(if (isEditingDay) Icons.Default.ExpandLess else Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (isEditingDay) "Done" else "Edit Hours", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // Inline Hour Picker / Adjuster
+                        if (isEditingDay) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text("Adjust Starting Time:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val openPresets = listOf("07:00 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "11:00 AM")
+                                items(openPresets) { time ->
+                                    FilterChip(
+                                        selected = editOpenTime == time,
+                                        onClick = {
+                                            editOpenTime = time
+                                            val updated = workingHours.map { if (it.dayOfWeek == day.dayOfWeek) it.copy(openTime = time, closeTime = editCloseTime) else it }
+                                            onUpdateWorkingHours(updated)
+                                        },
+                                        label = { Text(time, fontSize = 11.sp) }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Adjust Closing Time:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val closePresets = listOf("01:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM", "08:30 PM", "09:00 PM", "10:00 PM")
+                                items(closePresets) { time ->
+                                    FilterChip(
+                                        selected = editCloseTime == time,
+                                        onClick = {
+                                            editCloseTime = time
+                                            val updated = workingHours.map { if (it.dayOfWeek == day.dayOfWeek) it.copy(openTime = editOpenTime, closeTime = time) else it }
+                                            onUpdateWorkingHours(updated)
+                                        },
+                                        label = { Text(time, fontSize = 11.sp) }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = editOpenTime,
+                                    onValueChange = { editOpenTime = it },
+                                    label = { Text("Open (e.g. 08:00 AM)", fontSize = 11.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = editCloseTime,
+                                    onValueChange = { editCloseTime = it },
+                                    label = { Text("Close (e.g. 07:00 PM)", fontSize = 11.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val updated = workingHours.map { if (it.dayOfWeek == day.dayOfWeek) it.copy(openTime = editOpenTime, closeTime = editCloseTime) else it }
+                                        onUpdateWorkingHours(updated)
+                                        isEditingDay = false
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PhysioTealPrimary)
+                                ) {
+                                    Text("Save for ${day.dayOfWeek}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val updated = workingHours.map {
+                                            if (it.isOpen) it.copy(openTime = editOpenTime, closeTime = editCloseTime) else it
+                                        }
+                                        onUpdateWorkingHours(updated)
+                                        isEditingDay = false
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Apply All Open Days", fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1237,6 +1535,7 @@ fun DoctorProfileEditorSheetContent(
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(doctor.name) }
+    var photoUrl by remember { mutableStateOf(doctor.photoUrl) }
     var qual by remember { mutableStateOf(doctor.qualifications) }
     var exp by remember { mutableStateOf(doctor.experience) }
     var phone by remember { mutableStateOf(doctor.phone) }
@@ -1247,15 +1546,171 @@ fun DoctorProfileEditorSheetContent(
     var phil by remember { mutableStateOf(doctor.treatmentPhilosophy) }
     var area by remember { mutableStateOf(doctor.serviceArea) }
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            photoUrl = uri.toString()
+        }
+    }
+
+    val presetAvatars = listOf(
+        Pair("Default Photo", ""),
+        Pair("Senior Consultant", "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=500&auto=format&fit=crop&q=80"),
+        Pair("Female Specialist", "https://images.unsplash.com/photo-1594824813626-d6a59c98a587?w=500&auto=format&fit=crop&q=80"),
+        Pair("Sports Rehab Specialist", "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=500&auto=format&fit=crop&q=80"),
+        Pair("Clinical Doctor", "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&auto=format&fit=crop&q=80"),
+        Pair("Consultant Physio", "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=500&auto=format&fit=crop&q=80")
+    )
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         contentPadding = PaddingValues(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { Text("Edit Doctor Profile & Contact", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-        item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Doctor Name") }, modifier = Modifier.fillMaxWidth()) }
-        item { OutlinedTextField(value = qual, onValueChange = { qual = it }, label = { Text("Qualifications") }, modifier = Modifier.fillMaxWidth()) }
-        item { OutlinedTextField(value = exp, onValueChange = { exp = it }, label = { Text("Experience") }, modifier = Modifier.fillMaxWidth()) }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Edit Doctor Profile & Photo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }
+        }
+
+        // Doctor Photo Customization Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = PhysioTealContainer),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Doctor Profile Photo", fontWeight = FontWeight.Bold, color = PhysioTealDark, fontSize = 15.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        DoctorAvatarImage(
+                            photoUrl = photoUrl,
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape)
+                                .border(3.dp, PhysioTealPrimary, CircleShape),
+                            contentDescription = "Doctor Photo Preview"
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(PhysioTealPrimary)
+                                .clickable { photoPickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.AddAPhoto,
+                                contentDescription = "Upload Photo",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { photoPickerLauncher.launch("image/*") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PhysioTealPrimary),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Choose Gallery", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = { photoUrl = "" },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Reset Default", fontSize = 12.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text("Or Select Preset Professional Photo:", style = MaterialTheme.typography.labelSmall, color = PhysioTealDark, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(presetAvatars) { preset ->
+                            val isSelected = photoUrl.trim() == preset.second.trim()
+                            Card(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { photoUrl = preset.second }
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) PhysioTealPrimary else Color.LightGray.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) PhysioTealContainer else MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    DoctorAvatarImage(
+                                        photoUrl = preset.second,
+                                        modifier = Modifier.size(28.dp).clip(CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(preset.first, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = photoUrl,
+                        onValueChange = { photoUrl = it },
+                        label = { Text("Direct Photo URL (or paste Web Link)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        trailingIcon = {
+                            if (photoUrl.isNotEmpty()) {
+                                IconButton(onClick = { photoUrl = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Doctor Name (e.g. Dr. Satyaprakash Das)") }, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(value = qual, onValueChange = { qual = it }, label = { Text("Qualifications (e.g. MPT, BPT, MIAP)") }, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(value = exp, onValueChange = { exp = it }, label = { Text("Experience (e.g. 9+ Years Clinical Experience)") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Direct Calling Phone") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = wa, onValueChange = { wa = it }, label = { Text("WhatsApp Number") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") }, modifier = Modifier.fillMaxWidth()) }
@@ -1263,15 +1718,32 @@ fun DoctorProfileEditorSheetContent(
         item { OutlinedTextField(value = specs, onValueChange = { specs = it }, label = { Text("Specializations") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = phil, onValueChange = { phil = it }, label = { Text("Treatment Philosophy") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = area, onValueChange = { area = it }, label = { Text("Home Visit Coverage Areas") }, modifier = Modifier.fillMaxWidth()) }
+        
         item {
             Button(
                 onClick = {
-                    onSave(doctor.copy(name = name, qualifications = qual, experience = exp, phone = phone, whatsapp = wa, email = email, about = about, specializations = specs, treatmentPhilosophy = phil, serviceArea = area))
+                    onSave(doctor.copy(
+                        name = name,
+                        photoUrl = photoUrl,
+                        qualifications = qual,
+                        experience = exp,
+                        phone = phone,
+                        whatsapp = wa,
+                        email = email,
+                        about = about,
+                        specializations = specs,
+                        treatmentPhilosophy = phil,
+                        serviceArea = area,
+                        updatedAt = System.currentTimeMillis()
+                    ))
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PhysioTealPrimary)
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PhysioTealPrimary),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Update Public Doctor Profile")
+                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save Profile & Photo", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
     }

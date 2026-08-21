@@ -375,10 +375,35 @@ fun BookHomeVisitSheetContent(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Dr. Das will visit your location with necessary therapy equipment.",
+                text = "Physiotherapist will visit your location with necessary therapy equipment.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            if (workingHours.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = PhysioTealContainer.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.AccessTime, contentDescription = null, tint = PhysioTealPrimary, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val openDays = workingHours.filter { it.isOpen }
+                        val summaryText = if (openDays.isNotEmpty()) {
+                            val sample = openDays.first()
+                            "${openDays.size} Days Active • ${sample.openTime} – ${sample.closeTime}"
+                        } else {
+                            "Consultation Hours Available"
+                        }
+                        Text("Active Working Hours: $summaryText", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PhysioTealDark)
+                    }
+                }
+            }
         }
 
         item {

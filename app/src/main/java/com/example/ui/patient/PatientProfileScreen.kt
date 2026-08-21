@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,6 +41,7 @@ fun PatientProfileScreen(
 ) {
     val context = LocalContext.current
     val doctor by viewModel.doctorProfile.collectAsState()
+    val workingHours by viewModel.workingHours.collectAsState()
     val faqs by viewModel.publishedFaqs.collectAsState()
     val notifications by viewModel.patientNotifications.collectAsState()
 
@@ -153,13 +155,12 @@ fun PatientProfileScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.img_doctor_profile_1787258632187),
-                            contentDescription = null,
+                        DoctorAvatarImage(
+                            photoUrl = doc.photoUrl,
+                            contentDescription = doc.name,
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
+                                .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -292,11 +293,27 @@ fun PatientProfileScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_physio_logo_v2_1787291462283),
+                        contentDescription = "PhysioCare",
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, PhysioTealPrimary, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "PhysioCare v1.0 • Connected to Live Cloud Database",
+                        text = "PhysioCare v2.0 • Live Rehabilitation Platform",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = PhysioTealDark
+                    )
+                    Text(
+                        text = "Real-time Appointments • Shifts & Working Hours Engine",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -333,13 +350,12 @@ fun PatientProfileScreen(
 
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(id = R.drawable.img_doctor_profile_1787258632187),
-                            contentDescription = null,
+                        DoctorAvatarImage(
+                            photoUrl = doc.photoUrl,
+                            contentDescription = doc.name,
                             modifier = Modifier
                                 .size(80.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
+                                .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
@@ -368,6 +384,43 @@ fun PatientProfileScreen(
                 item {
                     Text("Service Coverage", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text(doc.serviceArea, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                item {
+                    Text("Weekly Consultation & Visit Hours", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            workingHours.forEach { day ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(day.dayOfWeek, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    if (day.isOpen) {
+                                        Text(
+                                            "${day.openTime} – ${day.closeTime}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = PhysioTealDark
+                                        )
+                                    } else {
+                                        Text(
+                                            "Closed",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -457,13 +510,14 @@ fun PatientProfileScreen(
                     .fillMaxWidth()
                     .padding(20.dp)
             ) {
-                Text("Contact Dr. Satyaprakash Das", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Contact ${doc.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(14.dp))
                 QuickContactBar(
                     phone = doc.phone,
                     whatsapp = doc.whatsapp,
                     email = doc.email,
-                    context = context
+                    context = context,
+                    doctorName = doc.name
                 )
             }
         }
